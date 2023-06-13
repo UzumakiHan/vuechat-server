@@ -41,10 +41,10 @@ jobs:
              ls -la
           # 将工作目录下的文件全部拷贝到部署服务器的工作目录
           scp: |
-            ./bin/* => /home/HHJ/nodeProject/vuechat-server
-            ./views/* => /home/HHJ/nodeProject/vuechat-server
-            ./db/* => /home/HHJ/nodeProject/vuechat-server
-            ./routes/* => /home/HHJ/nodeProject/vuechat-server
+            ./bin => /home/HHJ/nodeProject/vuechat-server
+            ./views => /home/HHJ/nodeProject/vuechat-server
+            ./db => /home/HHJ/nodeProject/vuechat-server
+            ./routes => /home/HHJ/nodeProject/vuechat-server
             ./app.config.js => /home/HHJ/nodeProject/vuechat-server
             ./app.js => /home/HHJ/nodeProject/vuechat-server
             ./package.json => /home/HHJ/nodeProject/vuechat-server
