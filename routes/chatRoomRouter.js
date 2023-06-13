@@ -8,7 +8,7 @@ const express = require('express');
 const router = express.Router();
 const models = require('../db')
 const multiparty = require('multiparty');
-const NET_URL = 'http://127.0.0.1:3000/';
+const NET_URL = 'http://43.142.90.39/11112/';
 
 //创建群聊
 router.post('/createChatRoom', (req, res) => {

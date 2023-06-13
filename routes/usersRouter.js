@@ -9,8 +9,7 @@ const md5 = require('md5-node');
 const models = require('../db')
 const multiparty = require('multiparty');
 
-//验证码 
-let captchaText;
+
 /**
  * 获取随机图形验证码
  */
@@ -18,30 +17,33 @@ router.get('/captcha', (req, res) => {
   //  console.log(1)
   // 1. 生成随机的验证码
   var captcha = svgCaptcha.create({
+    width:80,
+    height:40,
     color: true,
     noise: 2,
     size: 4, // 验证码长度
     ignoreChars: '0o1i', // 验证码字符中排除 0o1i
   });
-  captchaText = captcha.text
-  // // 3. 返回给客户端
-  res.type('svg');
-  res.status(200).send(captcha.data);
+
+  res.json({
+    captchaSvg:captcha.data,
+    captchaText:captcha.text
+  })
 });
 
 
 //用户注册
 router.post('/accountRegister', (req, res) => {
-  console.log(captchaText);
+  //console.log(captchaText);
   let newAccount = {
     vuechatName: req.body.vueChatName,
     vuechatAccount: req.body.vueChatAccount,
     vuechatPassword: md5(req.body.vueChatpassword),
     vuechatAvatar: req.body.vuechatAvatar
   }
-  let { vueChatCaptcha } = req.body;
-  console.log(vueChatCaptcha)
-  if (captchaText != vueChatCaptcha) {
+  let { vueChatCaptcha,svgcaptchaText } = req.body;
+  // console.log(vueChatCaptcha)
+  if (svgcaptchaText != vueChatCaptcha) {
     res.json({
       status: 0,
       message: '验证码不正确'
@@ -70,9 +72,9 @@ router.post('/accountRegister', (req, res) => {
 });
 //用户登录
 router.post('/accountLogin', (req, res) => {
-  let { vueChatAccount, vueChatpassword, vueChatCaptcha } = req.body;
-  // console.log(captchaText, vueChatCaptcha, md5(vueChatpassword))
-  if (captchaText != vueChatCaptcha) {
+  let { vueChatAccount, vueChatpassword, vueChatCaptcha,svgcaptchaText } = req.body;
+ 
+  if (svgcaptchaText != vueChatCaptcha) {
     res.json({
       status: 0,
       message: '验证码不正确'
