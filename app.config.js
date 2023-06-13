@@ -5,7 +5,7 @@ module.exports = {
   // apps 是一个数组，每一项都是一个应用的配置
   apps: [{
     // 应用名称
-    name: "express-demo",
+    name: "vue-chat-server",
 
     // 应用入口文件
     script: "./bin/www",
