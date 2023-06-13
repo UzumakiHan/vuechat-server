@@ -32,7 +32,7 @@ router.get('/captcha', (req, res) => {
 
 //用户注册
 router.post('/accountRegister', (req, res) => {
-  //console.log(captchaText);
+  console.log(captchaText);
   let newAccount = {
     vuechatName: req.body.vueChatName,
     vuechatAccount: req.body.vueChatAccount,
@@ -40,7 +40,7 @@ router.post('/accountRegister', (req, res) => {
     vuechatAvatar: req.body.vuechatAvatar
   }
   let { vueChatCaptcha } = req.body;
-  // console.log(vueChatCaptcha)
+  console.log(vueChatCaptcha)
   if (captchaText != vueChatCaptcha) {
     res.json({
       status: 0,
