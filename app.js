@@ -1,13 +1,15 @@
 const createError = require('http-errors');
+const history = require('connect-history-api-fallback');
 const express = require('express');
 const path = require('path');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
 
+
 const indexRouter = require('./routes/index');
 
 const app = express();
-
+app.use('/',history())
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
