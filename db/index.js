@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-mongoose.connect('mongodb://localhost:27017/vuechatdb');
+mongoose.connect('mongodb://localhost:27017/vue3chatdb');
 const db = mongoose.connection;
 db.on('open', function () {
     console.log('MongoDB Connection Successed');
