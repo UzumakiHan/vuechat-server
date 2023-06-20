@@ -12,22 +12,22 @@ const NET_URL = 'http://43.142.90.39/11112/';
 
 //创建群聊
 router.post('/createChatRoom', (req, res) => {
-    let form = new multiparty.Form();
+    const form = new multiparty.Form();
     form.parse(req, (err, fields, files) => {
         // console.log(files, fields);
-        let chatRoomMemberId = JSON.parse(fields.chatRoomMemberId[0]);
+        const chatRoomMemberId = JSON.parse(fields.chatRoomMemberId[0]);
         // console.log(chatRoomMemberId)
         let chatRoomMemberIdLength = chatRoomMemberId.length;
-        let chatRoomImg = fields.chatRoomImg[0];
-        let chatRoomOwner = fields.chatRoomOwner[0];
+        const chatRoomImg = fields.chatRoomImg[0];
+        const chatRoomOwner = fields.chatRoomOwner[0];
 
         models.chatRoom.create({
             chatRoomMemberId, chatRoomImg, chatRoomOwner
         }, (err, data) => {
             if (err) throw err;
             if (data) {
-                let chatRoomMemberIds = data.chatRoomMemberId;
-                let chatRoomId = data._id
+                const chatRoomMemberIds = data.chatRoomMemberId;
+                const chatRoomId = data._id
                 // console.log(String(chatRoomId))
                 chatRoomMemberIds.forEach(chatRoomMember => {
                     models.User.updateOne({ _id: chatRoomMember }, {
@@ -39,7 +39,8 @@ router.post('/createChatRoom', (req, res) => {
                         if (chatRoomMemberIdLength === 0) {
                             res.json({
                                 status: 2,
-                                message: '创建成功'
+                                message: '创建成功',
+                                data:{}
                             })
                         }
                     })
@@ -54,13 +55,13 @@ router.post('/createChatRoom', (req, res) => {
 });
 //我的群聊
 router.post('/myChatRoom', (req, res) => {
-    let form = new multiparty.Form();
+    const form = new multiparty.Form();
     form.parse(req, (err, fields, files) => {
         //  console.log(files, fields);
-        let chatRoomIdArr = JSON.parse(fields.chatRoomIdArr[0]);
+        const chatRoomIdArr = JSON.parse(fields.chatRoomIdArr[0]);
         // console.log(chatRoomIdArr);
         let chatRoomIdArrLength = chatRoomIdArr.length;
-        let allMyChatRoom = []
+        const allMyChatRoom = []
         chatRoomIdArr.forEach(chatRoomId => {
             models.chatRoom.findById(chatRoomId, (err, data) => {
                 if (err) throw err;
@@ -70,7 +71,8 @@ router.post('/myChatRoom', (req, res) => {
                     if (chatRoomIdArrLength === 0) {
                         res.json({
                             status: 2,
-                            allMyChatRoom
+                            message:'success',
+                            data:allMyChatRoom
                         })
                     }
                 }
@@ -83,7 +85,7 @@ router.post('/myChatRoom', (req, res) => {
 //更改群昵称
 router.post('/editChatRoomName', (req, res) => {
     // console.log(req.body.id);
-    let { id, chatRoomName } = req.body;
+    const { id, chatRoomName } = req.body;
     console.log(id, chatRoomName);
     models.chatRoom.updateOne({
         _id: id
@@ -95,12 +97,14 @@ router.post('/editChatRoomName', (req, res) => {
             res.json({
                 status: 2,
                 message: '修改成功',
-                chatRoom: data
+                data,
+               
             })
         } else {
             res.json({
-                status: 2,
-                message: '修改失败'
+                status: 1,
+                message: '修改失败',
+                data:{}
             })
         }
     })
@@ -110,7 +114,7 @@ router.post('/editChatRoomName', (req, res) => {
 //更改群公告
 router.post('/editChatRoomAd', (req, res) => {
     // console.log(req.body.id);
-    let { id, chatRoomAd } = req.body;
+    const { id, chatRoomAd } = req.body;
     // console.log(id, chatRoomAd);
     models.chatRoom.updateOne({
         _id: id
@@ -122,12 +126,13 @@ router.post('/editChatRoomAd', (req, res) => {
             res.json({
                 status: 2,
                 message: '修改成功',
-                chatRoom: data
+                data:{}
             })
         } else {
             res.json({
-                status: 2,
-                message: '修改失败'
+                status: 1,
+                message: '修改失败',
+                data:{}
             })
         }
     })
@@ -137,12 +142,12 @@ router.post('/editChatRoomAd', (req, res) => {
 
 //添加群成员
 router.post('/addChatMember', (req, res) => {
-    let form = new multiparty.Form();
+    const form = new multiparty.Form();
     form.parse(req, (err, fields, files) => {
-        let chatRoomMemberId = JSON.parse(fields.chatRoomMemberId[0]);
-        let selectResultIds = JSON.parse(fields.selectResultIds[0]);
+        const chatRoomMemberId = JSON.parse(fields.chatRoomMemberId[0]);
+        const selectResultIds = JSON.parse(fields.selectResultIds[0]);
         let chatRoomMemberIdLength = selectResultIds.length;
-        let id = fields.chatRoomId[0];
+        const id = fields.chatRoomId[0];
         models.chatRoom.updateOne({
             _id: id
         }, { chatRoomMemberId }, (err, data) => {
@@ -157,7 +162,8 @@ router.post('/addChatMember', (req, res) => {
                     if (chatRoomMemberIdLength === 0) {
                         res.json({
                             status: 2,
-                            message: '添加群成员成功'
+                            message: '添加群成员成功',
+                            data:{}
                         })
                     }
                 })
@@ -184,29 +190,29 @@ router.post('/addChatMember', (req, res) => {
 })
 //获取聊天室
 router.post('/getChatRoomInfo', (req, res) => {
-    let { id } = req.body;
+    const { id } = req.body;
     models.chatRoom.findById(id, (err, data) => {
         if (err) throw err;
         if (data) {
             res.json({
                 status: 2,
                 message: '获取聊天室成功',
-                chatRoomInfo: data
+                data
             });
         } else {
             res.json({
                 status: 1,
                 message: '获取聊天室失败',
-                chatRoomInfo: []
+                data:{}
             });
         }
     })
 });
 //移除群成员
 router.post('/removeChatMember', (req, res) => {
-    let { chatRoomId, removeChatId } = req.body;
+    const { chatRoomId, removeChatId } = req.body;
     // console.log(chatRoomId)
-    let sendAccountAndchatRoomId = removeChatId + chatRoomId;
+    const sendAccountAndchatRoomId = removeChatId + chatRoomId;
     models.User.updateOne({
         _id: removeChatId
     }, {
@@ -226,12 +232,14 @@ router.post('/removeChatMember', (req, res) => {
                         if (data2) {
                             res.json({
                                 status: 2,
-                                message: '移除成功'
+                                message: '移除成功',
+                                data:{}
                             })
                         } else {
                             res.json({
                                 status: 1,
-                                message: '移除失败'
+                                message: '移除失败',
+                                data:{}
                             })
                         }
 
@@ -245,9 +253,9 @@ router.post('/removeChatMember', (req, res) => {
 });
 //删除退出群聊(群主自己退出)
 router.post('/deleteChatOwner', (req, res) => {
-    let { chatRoomId, removeChatId, newChatRoomOwner } = req.body;
+    const { chatRoomId, removeChatId, newChatRoomOwner } = req.body;
     // console.log(chatRoomId, removeChatId, newChatRoomOwner)
-    let sendAccountAndchatRoomId = removeChatId + chatRoomId;
+    const sendAccountAndchatRoomId = removeChatId + chatRoomId;
     models.User.updateOne({
         _id: removeChatId
     }, {
@@ -274,12 +282,14 @@ router.post('/deleteChatOwner', (req, res) => {
                                 if (data2) {
                                     res.json({
                                         status: 2,
-                                        message: '退出群组成功'
+                                        message: '退出群组成功',
+                                        data:{}
                                     })
                                 } else {
                                     res.json({
                                         status: 1,
-                                        message: '退出群组失败'
+                                        message: '退出群组失败',
+                                        data:{}
                                     })
                                 }
 

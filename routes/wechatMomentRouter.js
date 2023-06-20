@@ -11,36 +11,39 @@ const models = require('../db')
 //发表朋友圈
 router.post('/publicMoment', (req, res) => {
     // console.log(req.body.wechatMoment)
-    let form = new multiparty.Form();
+    const form = new multiparty.Form();
     form.parse(req, (err, fields, files) => {
-        let latitudeAndlongitude = JSON.parse(fields.latitudeAndlongitude[0])
-        // console.log(JSON.parse(fields.latitudeAndlongitude[0]))
-        let base64ImgListLength = Number(fields.base64ImgListLength[0]);
-        let base64ImgList = [];
+        const latitudeAndlongitude = JSON.parse(fields.latitudeAndlongitude[0])
+        const userInfo = JSON.parse(fields.userInfo[0])
+        const base64ImgListLength = Number(fields.base64ImgListLength[0]);
+        const base64ImgList = [];
         for (let i = 0; i < base64ImgListLength; i++) {
-            let base64ImgListIndex = `base64ImgList${i}`;
+            const base64ImgListIndex = `base64ImgList${i}`;
             base64ImgList.push(fields[base64ImgListIndex][0]);
         }
 
-        let momentInfo = {
+        const momentInfo = {
             vueChatId: fields.vueChatId[0],
             momentText: fields.momentText[0],
             base64ImgList: base64ImgList,
             location: fields.location[0],
             momentTime: fields.momentTime[0],
-            latitudeAndlongitude: latitudeAndlongitude
+            latitudeAndlongitude: latitudeAndlongitude,
+            userInfo
         }
         models.wechatMoment.create(momentInfo, (err, data) => {
             if (err) throw err;
             if (data) {
                 res.json({
                     status: 2,
-                    message: '发表成功'
+                    message: '发表成功',
+                    data: {}
                 })
             } else {
                 res.json({
                     status: 1,
-                    message: '发表失败'
+                    message: '发表失败',
+                    data: {}
                 })
             }
         })
@@ -51,76 +54,67 @@ router.post('/publicMoment', (req, res) => {
 });
 //获取好友们的朋友圈
 router.post('/allFriendsWechatMoments', (req, res) => {
-    let { id } = req.body;
-    let allFriendsWechatMoments = []
+    const { id } = req.body;
+    const page = Number(req.body.page) - 1;
+    const pageSize = Number(req.body.pageSize)
+    const allFriendsWechatMoments = []
+    let allUserLength = 0
     models.User.findById(id, (err, data) => {
         if (err) throw err;
         if (data) {
-            let friendsList = data.friendsList;
-            friendsList.push(id);
-            // console.log(friendsList)
-            let allUserLength = friendsList.length;
-            friendsList.forEach(vuechatId => {
-                models.wechatMoment.find({
-                    vueChatId: vuechatId
-                }, (err1, data1) => {
-                    if (err1) throw err1;
-                    if (data1) {
+            const friendsList = data.friendsList;
 
-                        data1.forEach(item => {
-                            allFriendsWechatMoments.push(item);
+            friendsList.push(id);
+
+            allUserLength = friendsList.length;
+            friendsList.forEach(vuechatId => {
+                models.wechatMoment.find({ vueChatId: vuechatId }).skip(page * pageSize).limit(pageSize).sort({ momentTime: -1 }).exec((err1, info) => {
+                    if (err1) throw err1;
+
+                    info.forEach(item => {
+                        allFriendsWechatMoments.push(item);
+                    })
+                    allUserLength--;
+                    if (allUserLength === 0) {
+                        res.json({
+                            status: 2,
+                            data: {
+                                list: allFriendsWechatMoments
+                            },
+                            message: 'success'
                         })
-                        allUserLength--;
-                        if (allUserLength === 0) {
-                            // console.log(allFriendsWechatMoments)
-                            res.json({
-                                status: 2,
-                                allFriendsWechatMoments
-                            })
-                        }
                     }
 
-                })
+                });
             })
         }
     })
+    // console.log(allUserLength)
+
+
 
 });
 //获取自己的朋友圈
 router.post('/myWechatMoments', (req, res) => {
-    let { id, pageNum, pageSize } = req.body;
-    // let myWechatMoments = [];
-    // console.log(id, pageNum, pageSize);
-    models.wechatMoment.find({ vueChatId: id }).then(data => {
-        let wechatmoments = data.reverse()
-        res.send({ status: 2, message: '获取成功', myWechatMoments: pageFilter(wechatmoments, pageNum, pageSize) })
-    }).catch(err => {
+    const { id} = req.body;
+    const page = Number(req.body.page) - 1;
+    const pageSize = Number(req.body.pageSize)
+    models.wechatMoment.find({ vueChatId: id }).skip(page * pageSize).limit(pageSize).sort({ momentTime: -1 }).exec((err, data) => {
+        if (err) throw err;
+
         res.json({
-            status: 1,
-            message: '获取失败'
+            status: 2,
+            data: {
+                list: data
+            },
+            message: 'success'
         })
-    })
-    // models.wechatMoment.find({
-    //     vueChatId: id
-    // }, (err, data) => {
-    //     if (err) throw err;
-    //     if (data) {
-    //         myWechatMoments.push(data);
-    //         res.json({
-    //             status: 2,
-    //             myWechatMoments
-    //         })
-    //     } else {
-    //         res.json({
-    //             status: 1,
-    //             myWechatMoments
-    //         })
-    //     }
-    // })
+
+    });
 });
 //删除朋友圈
 router.post('/delWechatMoment', (req, res) => {
-    let { id } = req.body;
+    const { id } = req.body;
     models.wechatMoment.deleteOne({
         _id: id
     }, (err, data) => {
@@ -128,12 +122,15 @@ router.post('/delWechatMoment', (req, res) => {
         if (data) {
             res.json({
                 status: 2,
-                message: '删除成功'
+                message: '删除成功',
+                data: {}
             })
         } else {
             res.json({
                 status: 1,
-                message: '删除失败'
+                message: '删除失败',
+                data: {}
+
             })
         }
     })
@@ -142,23 +139,27 @@ router.post('/delWechatMoment', (req, res) => {
 });
 //点赞朋友圈
 router.post('/likeWechatMoment', (req, res) => {
-    let { wechatMomentId, vuechatAccountId } = req.body;
+    const { wechatMomentId, vuechatAccount } = req.body;
     models.wechatMoment.updateOne({
         _id: wechatMomentId
     }, {
         // likeAccounts:[]
-        $push: { likeAccounts: vuechatAccountId }
+        $push: { likeAccounts: vuechatAccount }
     }, (err, data) => {
         if (err) throw err;
         if (data) {
             res.json({
                 status: 2,
-                message: '点赞成功'
+                message: '点赞成功',
+                data: {}
+
             })
         } else {
             res.json({
                 status: 1,
-                message: '点赞失败'
+                message: '点赞失败',
+                data: {}
+
             })
         }
 
@@ -166,22 +167,24 @@ router.post('/likeWechatMoment', (req, res) => {
 });
 //取消点赞朋友圈
 router.post('/unLikeWechatMoment', (req, res) => {
-    let { wechatMomentId, vuechatAccountId } = req.body;
+    const { wechatMomentId, vuechatAccount } = req.body;
     models.wechatMoment.updateOne({
         _id: wechatMomentId
     }, {
         // likeAccounts:[]
-        $pull: { likeAccounts: vuechatAccountId }
+        $pull: { likeAccounts: vuechatAccount }
     }, (err, data) => {
         if (err) throw err;
         if (data) {
             res.json({
                 status: 2,
+                data: {},
                 message: '取消点赞成功'
             })
         } else {
             res.json({
                 status: 1,
+                data: {},
                 message: '取消点赞失败'
             })
         }
@@ -190,13 +193,15 @@ router.post('/unLikeWechatMoment', (req, res) => {
 });
 //评论朋友圈
 router.post('/sendWechatComment', (req, res) => {
-    // console.log(req.body);
-    let { wechatMomentId, sendCommentId, recieveCommentId, wechatCommentTime, wechatComment } = req.body;
-    let commentInfo = {
-        sendCommentId,
-        recieveCommentId,
+    console.log(req.body);
+    const { wechatMomentId, receiveUser, sendUser, wechatComment, wechatCommentTime } = req.body;
+    console.log(sendUser)
+    const commentInfo = {
+
         wechatComment,
-        wechatCommentTime
+        wechatCommentTime,
+        receiveUser: JSON.parse(receiveUser),
+        sendUser: JSON.parse(sendUser)
     }
     models.wechatMoment.updateOne({
         _id: wechatMomentId
@@ -207,11 +212,13 @@ router.post('/sendWechatComment', (req, res) => {
         if (data) {
             res.json({
                 status: 2,
+                data: {},
                 message: '评论成功'
             })
         } else {
             res.json({
                 status: 1,
+                data: {},
                 message: '评论失败'
             })
         }
@@ -230,7 +237,7 @@ function pageFilter(arr, pageNum, pageSize) {
     const start = pageSize * (pageNum - 1)
     const end = start + pageSize <= total ? start + pageSize : total;
     const list = []
-    for (var i = start; i < end; i++) {
+    for (let i = start; i < end; i++) {
         list.push(arr[i])
     }
 

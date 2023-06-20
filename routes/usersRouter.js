@@ -16,7 +16,7 @@ const multiparty = require('multiparty');
 router.get('/captcha', (req, res) => {
   //  console.log(1)
   // 1. 生成随机的验证码
-  var captcha = svgCaptcha.create({
+  const captcha = svgCaptcha.create({
     width:80,
     height:40,
     color: true,
@@ -26,23 +26,27 @@ router.get('/captcha', (req, res) => {
   });
 
   res.json({
+    status:2,
+    message:'success',
+   data:{
     captchaSvg:captcha.data,
     captchaText:captcha.text
+   }
   })
 });
 
 
 //用户注册
 router.post('/accountRegister', (req, res) => {
-  //console.log(captchaText);
-  let newAccount = {
-    vuechatName: req.body.vueChatName,
-    vuechatAccount: req.body.vueChatAccount,
-    vuechatPassword: md5(req.body.vueChatpassword),
-    vuechatAvatar: req.body.vuechatAvatar
+  const {vueChatName,vueChatAccount,vuechatAvatar,vueChatpassword,vueChatCaptcha,svgcaptchaText} = req.body;
+  const md5Pwd = md5(vueChatpassword)
+  const newAccount = {
+    vuechatName:vueChatName,
+    vuechatAccount: vueChatAccount,
+    vuechatPassword:md5Pwd,
+    md5Pwd,
+    vuechatAvatar:vuechatAvatar
   }
-  let { vueChatCaptcha,svgcaptchaText } = req.body;
-  // console.log(vueChatCaptcha)
   if (svgcaptchaText != vueChatCaptcha) {
     res.json({
       status: 0,
@@ -50,19 +54,22 @@ router.post('/accountRegister', (req, res) => {
     })
   } else {
     //验证用户名是否重复
-    models.User.findOne({ vuechatAccount: newAccount.vuechatAccount }, (err, data) => {
+    models.User.findOne({ vuechatAccount:vueChatAccount }, (err, data) => {
+      console.log(data)
       if (data) {
         res.json({
           status: 1,
-          message: 'vuechat号已存在'
+          message: 'vuechat号已存在',
+          data:{}
         })
       } else {
-        // console.log(newAccount)
         models.User.create(newAccount, (err, data) => {
           if (err) throw err;
           res.json({
             status: 2,
-            message: '注册成功'
+            message: '注册成功',
+          data:{}
+
           })
         })
       }
@@ -72,29 +79,33 @@ router.post('/accountRegister', (req, res) => {
 });
 //用户登录
 router.post('/accountLogin', (req, res) => {
-  let { vueChatAccount, vueChatpassword, vueChatCaptcha,svgcaptchaText } = req.body;
- 
+  const { vueChatAccount, vueChatpassword, vueChatCaptcha,svgcaptchaText } = req.body;
   if (svgcaptchaText != vueChatCaptcha) {
     res.json({
       status: 0,
-      message: '验证码不正确'
+      message: '验证码不正确',
+      data:{}
+
     })
   } else {
     models.User.findOne({
-      vuechatAccount: vueChatAccount,
+      vuechatAccount:vueChatAccount,
       vuechatPassword: md5(vueChatpassword)
     }, (err, data) => {
+      console.log(data)
       if (err) throw err;
       if (data) {
         res.json({
           status: 2,
           message: '登录成功',
-          userInfo: data
+          data
         })
       } else {
         res.json({
           status: 1,
-          message: '登录失败，请检查登录信息是否正确'
+          message: '登录失败，请检查登录信息是否正确',
+          data:{}
+
         })
       }
     })
@@ -103,21 +114,20 @@ router.post('/accountLogin', (req, res) => {
 
 //根据vuechat号查找好友
 router.post('/searchVueChatAccount', (req, res) => {
-  let { vuechatAccount } = req.body;
-  models.User.findOne({ vuechatAccount: vuechatAccount }, (err, data) => {
+  const { vuechatAccount } = req.body;
+  models.User.findOne({ vuechatAccount }, (err, data) => {
     if (err) throw err;
-    //console.log(data)
     if (data) {
       res.json({
         status: 2,
         message: '查询成功',
-        userInfo: data
+        data
       })
     } else {
       res.json({
         status: 1,
         message: '查询失败',
-        userInfo: data
+        data
       })
     }
 
@@ -125,17 +135,14 @@ router.post('/searchVueChatAccount', (req, res) => {
 });
 //根据vuechat号查找自己好友
 router.post('/searchMyFriend', (req, res) => {
-  // console.log(vuechatAccount,id)
-  let { vuechatAccount, id } = req.body;
-  // console.log(vuechatAccount,id)
+  const { vuechatAccount, id } = req.body;
   models.User.findOne({
     _id: id
   }, (err, data) => {
     if (err) throw err;
     if (data) {
-      let friendsList = data.friendsList;
-      // console.log(friendsList)
-      let friendsListLength = friendsList.length;
+      const friendsList = data.friendsList;
+      const friendsListLength = friendsList.length;
       let searchFlag = false;
       friendsList.forEach(friend => {
         // console.log(friend)
@@ -149,8 +156,8 @@ router.post('/searchMyFriend', (req, res) => {
             if (friendsListLength === 0) {
               res.json({
                 status: 2,
-                searchFlag,
-                userInfo: data1
+                message:'success',
+                data: data1
               })
             }
           }
@@ -159,29 +166,11 @@ router.post('/searchMyFriend', (req, res) => {
       })
     }
   })
-  // models.User.findOne({ vuechatAccount: vuechatAccount }, (err, data) => {
-  //   if (err) throw err;
-  //   //console.log(data)
-  //   if (data) {
-  //     res.json({
-  //       status: 2,
-  //       message: '查询成功',
-  //       userInfo: data
-  //     })
-  //   } else {
-  //     res.json({
-  //       status: 1,
-  //       message: '查询失败',
-  //       userInfo: data
-  //     })
-  //   }
-
-  // })
 });
 //获取登录用户的信息
 router.post('/findMyInfo', (req, res) => {
   // console.log(req.body.id)
-  let id = req.body.id;
+  const id = req.body.id;
   //console.log(id)
   models.User.findById(id, (err, data) => {
     if (err) throw err;
@@ -189,27 +178,29 @@ router.post('/findMyInfo', (req, res) => {
       // console.log(data)
       res.json({
         status: 2,
-        userinfo: data,
+        data,
         message: '获取用户信息成功'
       })
     } else {
       res.json({
         status: 1,
-        message: '获取用户信息失败'
+        message: '获取用户信息失败',
+        data:{}
+
       })
     }
   })
 });
 //获取用户添加的好友
 router.post('/getMailList', (req, res) => {
-  let id = req.body.id;
+  const id = req.body.id;
 
   models.User.findOne({ _id: id }, (err, data) => {
-    let mailList = [];
+    const mailList = [];
     if (err) throw err;
     if (data) {
       //console.log(data.friendsList);
-      let friendsList = data.friendsList;
+      const friendsList = data.friendsList;
       // console.log(friendsList)
 
       let friendsListLength = friendsList.length;
@@ -227,8 +218,9 @@ router.post('/getMailList', (req, res) => {
             if (friendsListLength === 0) {
               // console.log(mailList)
               res.json({
-                mailList: mailList,
-                status: 2
+                data: mailList,
+                status: 2,
+                message:'success'
               })
             }
           }
@@ -245,9 +237,9 @@ router.post('/getMailList', (req, res) => {
 });
 //删除好友
 router.post('/delMyFriend', (req, res) => {
-  let { myId, delId } = req.body;
-  let sendAccountAndTargetAccountId = myId + delId;
-  let targetAccountAndSendAccountId = delId + myId;
+  const { myId, delId } = req.body;
+  const sendAccountAndTargetAccountId = myId + delId;
+  const targetAccountAndSendAccountId = delId + myId;
 
   models.User.updateOne({
     _id: myId
@@ -275,12 +267,16 @@ router.post('/delMyFriend', (req, res) => {
                 if (data3) {
                   res.json({
                     status: 2,
-                    message: '删除好友成功'
+                    message: '删除好友成功',
+          data:{}
+
                   })
                 } else {
                   res.json({
                     status: 1,
-                    message: '删除好友失败'
+                    message: '删除好友失败',
+          data:{}
+
                   })
                 }
               })
@@ -295,7 +291,7 @@ router.post('/delMyFriend', (req, res) => {
 
 //获取用户头像
 router.post('/getUserByAccount', (req, res) => {
-  let { account } = req.body;
+  const { account } = req.body;
   models.User.findOne({
     vuechatAccount: account
   }, (err, data) => {
@@ -304,12 +300,14 @@ router.post('/getUserByAccount', (req, res) => {
       //console.log(data.vuechatAvatar);
       res.json({
         status: 2,
-        userinfo: data
+        message:'success',
+        data
       })
     } else {
       res.json({
         status: 1,
-        avatar: ''
+        message:'fail',
+        data:{}
       })
     }
   })
@@ -317,12 +315,12 @@ router.post('/getUserByAccount', (req, res) => {
 //修改个人资料
 router.post('/editVueChatInfo', (req, res) => {
   // console.log(req.body.wechatMoment)
-  let form = new multiparty.Form();
+  const form = new multiparty.Form();
   form.parse(req, (err, fields, files) => {
      console.log(fields.vuechatAvatar[0])
 
-    let id = fields.userid[0]
-    let userInfo = {
+     const id = fields.userid[0]
+     const userInfo = {
       vuechatAvatar: fields.vuechatAvatar[0],
       vuechatName: fields.vuechatName[0],
       sex: fields.sex[0],
@@ -342,12 +340,16 @@ router.post('/editVueChatInfo', (req, res) => {
       if (data) {
         res.json({
           status: 2,
-          message: '修改个人资料成功'
+          message: '修改个人资料成功',
+          data:{}
+
         })
       } else {
         res.json({
           status: 1,
-          message: '修改个人资料失败'
+          message: '修改个人资料失败',
+          data:{}
+
         })
       }
     })
@@ -356,11 +358,11 @@ router.post('/editVueChatInfo', (req, res) => {
 });
 //更改朋友圈背景
 router.post('/changeMomentBg', (req, res) => {
-  let form = new multiparty.Form();
+  const form = new multiparty.Form();
   form.parse(req, (err, fields, files) => {
 
-    let wechatMomentBg = fields.wechatMomentBg[0];
-    let id = fields.userid[0];
+    const wechatMomentBg = fields.wechatMomentBg[0];
+    const id = fields.userid[0];
 
     // console.log(id, wechatMomentBg)
     models.User.updateOne({ _id: id }, {
@@ -370,12 +372,16 @@ router.post('/changeMomentBg', (req, res) => {
       if (data) {
         res.json({
           status: 2,
-          message: '更改成功'
+          message: '更改成功',
+          data:{}
+
         })
       } else {
         res.json({
           status: 1,
-          message: '更改失败'
+          message: '更改失败',
+          data:{}
+
         })
       }
     })
@@ -385,7 +391,7 @@ router.post('/changeMomentBg', (req, res) => {
 
 //更改密码
 router.post('/changePwd', (req, res) => {
-  let { id, changePwd } = req.body;
+  const { id, changePwd } = req.body;
   models.User.updateOne({
     _id: id,
   }, { vuechatPassword: md5(changePwd) }, (err, data) => {
@@ -393,12 +399,16 @@ router.post('/changePwd', (req, res) => {
     if (data) {
       res.json({
         status: 2,
-        message: '修改密码成功，请重新登录'
+        message: '修改密码成功，请重新登录',
+        data:{}
+
       })
     } else {
       res.json({
         status: 1,
-        message: '修改密码失败'
+        message: '修改密码失败',
+        data:{}
+
       })
     }
   })

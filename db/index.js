@@ -137,7 +137,11 @@ const wechatMomentSchema = mongoose.Schema({
     commentList: {
         type: Array,
         default: []
-    }
+    },
+    userInfo: {
+        type: Array,
+        default: []
+    },
 
 })
 
