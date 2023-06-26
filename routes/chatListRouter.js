@@ -94,7 +94,7 @@ router.post('/alldigtalChatList', (req, res) => {
             } else {
                 res.json({
                     status: 2,
-                    message: '聊天内容获取失败',
+                    message: '聊天内容获取成功',
                     data:{
                         chatDigtalList: []
                     }

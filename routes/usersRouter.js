@@ -8,7 +8,7 @@ const svgCaptcha = require('svg-captcha');
 const md5 = require('md5-node');
 const models = require('../db')
 const multiparty = require('multiparty');
-
+const R = require('ramda')
 
 /**
  * 获取随机图形验证码
@@ -17,8 +17,8 @@ router.get('/captcha', (req, res) => {
   //  console.log(1)
   // 1. 生成随机的验证码
   const captcha = svgCaptcha.create({
-    width:80,
-    height:40,
+    width: 80,
+    height: 40,
     color: true,
     noise: 2,
     size: 4, // 验证码长度
@@ -26,26 +26,26 @@ router.get('/captcha', (req, res) => {
   });
 
   res.json({
-    status:2,
-    message:'success',
-   data:{
-    captchaSvg:captcha.data,
-    captchaText:captcha.text
-   }
+    status: 2,
+    message: 'success',
+    data: {
+      captchaSvg: captcha.data,
+      captchaText: captcha.text
+    }
   })
 });
 
 
 //用户注册
 router.post('/accountRegister', (req, res) => {
-  const {vueChatName,vueChatAccount,vuechatAvatar,vueChatpassword,vueChatCaptcha,svgcaptchaText} = req.body;
+  const { vueChatName, vueChatAccount, vuechatAvatar, vueChatpassword, vueChatCaptcha, svgcaptchaText } = req.body;
   const md5Pwd = md5(vueChatpassword)
   const newAccount = {
-    vuechatName:vueChatName,
+    vuechatName: vueChatName,
     vuechatAccount: vueChatAccount,
-    vuechatPassword:md5Pwd,
+    vuechatPassword: md5Pwd,
     md5Pwd,
-    vuechatAvatar:vuechatAvatar
+    vuechatAvatar: vuechatAvatar
   }
   if (svgcaptchaText != vueChatCaptcha) {
     res.json({
@@ -54,13 +54,13 @@ router.post('/accountRegister', (req, res) => {
     })
   } else {
     //验证用户名是否重复
-    models.User.findOne({ vuechatAccount:vueChatAccount }, (err, data) => {
+    models.User.findOne({ vuechatAccount: vueChatAccount }, (err, data) => {
       console.log(data)
       if (data) {
         res.json({
           status: 1,
           message: 'vuechat号已存在',
-          data:{}
+          data: {}
         })
       } else {
         models.User.create(newAccount, (err, data) => {
@@ -68,7 +68,7 @@ router.post('/accountRegister', (req, res) => {
           res.json({
             status: 2,
             message: '注册成功',
-          data:{}
+            data: {}
 
           })
         })
@@ -79,22 +79,23 @@ router.post('/accountRegister', (req, res) => {
 });
 //用户登录
 router.post('/accountLogin', (req, res) => {
-  const { vueChatAccount, vueChatpassword, vueChatCaptcha,svgcaptchaText } = req.body;
+  const { vueChatAccount, vueChatpassword, vueChatCaptcha, svgcaptchaText } = req.body;
   if (svgcaptchaText != vueChatCaptcha) {
     res.json({
       status: 0,
       message: '验证码不正确',
-      data:{}
+      data: {}
 
     })
   } else {
     models.User.findOne({
-      vuechatAccount:vueChatAccount,
+      vuechatAccount: vueChatAccount,
       vuechatPassword: md5(vueChatpassword)
     }, (err, data) => {
       console.log(data)
       if (err) throw err;
       if (data) {
+        delete data['vuechatPassword']
         res.json({
           status: 2,
           message: '登录成功',
@@ -104,7 +105,7 @@ router.post('/accountLogin', (req, res) => {
         res.json({
           status: 1,
           message: '登录失败，请检查登录信息是否正确',
-          data:{}
+          data: {}
 
         })
       }
@@ -156,7 +157,7 @@ router.post('/searchMyFriend', (req, res) => {
             if (friendsListLength === 0) {
               res.json({
                 status: 2,
-                message:'success',
+                message: 'success',
                 data: data1
               })
             }
@@ -169,23 +170,58 @@ router.post('/searchMyFriend', (req, res) => {
 });
 //获取登录用户的信息
 router.post('/findMyInfo', (req, res) => {
-  // console.log(req.body.id)
   const id = req.body.id;
-  //console.log(id)
   models.User.findById(id, (err, data) => {
     if (err) throw err;
     if (data) {
-      // console.log(data)
+      const { age,
+        sex,
+        brithday,
+        address,
+        phone,
+        wechatMomentBg,
+        friendsList,
+        applyVuechatFriendsList,
+        myApplyVuechatFriendsList,
+        personalSign,
+        createTime,
+        chatRooms,
+        _id,
+        vuechatName,
+        vuechatAccount,
+        vuechatAvatar,
+        __v
+      } = data;
+      const newData = {
+        age,
+        sex,
+        brithday,
+        address,
+        phone,
+        wechatMomentBg,
+        friendsList,
+        applyVuechatFriendsList,
+        myApplyVuechatFriendsList,
+        personalSign,
+        createTime,
+        chatRooms,
+        _id,
+        vuechatName,
+        vuechatAccount,
+        vuechatAvatar,
+        __v
+      }
+
       res.json({
         status: 2,
-        data,
+        data: newData,
         message: '获取用户信息成功'
       })
     } else {
       res.json({
         status: 1,
         message: '获取用户信息失败',
-        data:{}
+        data: {}
 
       })
     }
@@ -199,32 +235,22 @@ router.post('/getMailList', (req, res) => {
     const mailList = [];
     if (err) throw err;
     if (data) {
-      //console.log(data.friendsList);
       const friendsList = data.friendsList;
-      // console.log(friendsList)
-
       let friendsListLength = friendsList.length;
-      //console.log(friendsListLength)
       friendsList.forEach(item => {
-        // console.log(item)
         models.User.findOne({ _id: item }, (err1, data1) => {
           if (err1) throw err1;
           if (data1) {
-            //console.log(data1)
             mailList.push(data1)
             friendsListLength--;
-            // console.log(friendsListLength)
-            // console.log(mailList)
             if (friendsListLength === 0) {
-              // console.log(mailList)
               res.json({
                 data: mailList,
                 status: 2,
-                message:'success'
+                message: 'success'
               })
             }
           }
-          // console.log(mailList)
         })
 
       })
@@ -256,26 +282,26 @@ router.post('/delMyFriend', (req, res) => {
         if (err1) throw err1;
         if (data1) {
           models.ChatListDital.deleteMany({
-            sendAccountAndTargetAccountId:sendAccountAndTargetAccountId
+            sendAccountAndTargetAccountId: sendAccountAndTargetAccountId
           }, (err2, data2) => {
             if (err2) throw err2;
             if (data2) {
               models.ChatListDital.deleteMany({
-                sendAccountAndTargetAccountId:targetAccountAndSendAccountId
+                sendAccountAndTargetAccountId: targetAccountAndSendAccountId
               }, (err3, data3) => {
                 if (err3) throw err3;
                 if (data3) {
                   res.json({
                     status: 2,
                     message: '删除好友成功',
-          data:{}
+                    data: {}
 
                   })
                 } else {
                   res.json({
                     status: 1,
                     message: '删除好友失败',
-          data:{}
+                    data: {}
 
                   })
                 }
@@ -300,14 +326,14 @@ router.post('/getUserByAccount', (req, res) => {
       //console.log(data.vuechatAvatar);
       res.json({
         status: 2,
-        message:'success',
+        message: 'success',
         data
       })
     } else {
       res.json({
         status: 1,
-        message:'fail',
-        data:{}
+        message: 'fail',
+        data: {}
       })
     }
   })
@@ -317,10 +343,10 @@ router.post('/editVueChatInfo', (req, res) => {
   // console.log(req.body.wechatMoment)
   const form = new multiparty.Form();
   form.parse(req, (err, fields, files) => {
-     console.log(fields.vuechatAvatar[0])
+    console.log(fields.vuechatAvatar[0])
 
-     const id = fields.userid[0]
-     const userInfo = {
+    const id = fields.userid[0]
+    const userInfo = {
       vuechatAvatar: fields.vuechatAvatar[0],
       vuechatName: fields.vuechatName[0],
       sex: fields.sex[0],
@@ -341,14 +367,14 @@ router.post('/editVueChatInfo', (req, res) => {
         res.json({
           status: 2,
           message: '修改个人资料成功',
-          data:{}
+          data: {}
 
         })
       } else {
         res.json({
           status: 1,
           message: '修改个人资料失败',
-          data:{}
+          data: {}
 
         })
       }
@@ -373,14 +399,14 @@ router.post('/changeMomentBg', (req, res) => {
         res.json({
           status: 2,
           message: '更改成功',
-          data:{}
+          data: {}
 
         })
       } else {
         res.json({
           status: 1,
           message: '更改失败',
-          data:{}
+          data: {}
 
         })
       }
@@ -400,16 +426,39 @@ router.post('/changePwd', (req, res) => {
       res.json({
         status: 2,
         message: '修改密码成功，请重新登录',
-        data:{}
+        data: {}
 
       })
     } else {
       res.json({
         status: 1,
         message: '修改密码失败',
-        data:{}
+        data: {}
 
       })
+    }
+  })
+})
+router.post('/verifyPwd',(req,res)=>{
+  const {pwd,id} = req.body;
+  models.User.findById(id, (err, data)=>{
+    if(err) throw err;
+    if(data){
+      const userPwd = data.vuechatPassword;
+      
+      if(md5(pwd) === userPwd){
+        res.json({
+          message:'success',
+          status:2,
+          data:{}
+        })
+      }else{
+        res.json({
+          message:'fail',
+          status:1,
+          data:{}
+        })
+      }
     }
   })
 })
