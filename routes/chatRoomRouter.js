@@ -57,27 +57,37 @@ router.post('/createChatRoom', (req, res) => {
 router.post('/myChatRoom', (req, res) => {
     const form = new multiparty.Form();
     form.parse(req, (err, fields, files) => {
-        //  console.log(files, fields);
+        
         const chatRoomIdArr = JSON.parse(fields.chatRoomIdArr[0]);
-        // console.log(chatRoomIdArr);
+     
         let chatRoomIdArrLength = chatRoomIdArr.length;
-        const allMyChatRoom = []
-        chatRoomIdArr.forEach(chatRoomId => {
-            models.chatRoom.findById(chatRoomId, (err, data) => {
-                if (err) throw err;
-                if (data) {
-                    chatRoomIdArrLength--;
-                    allMyChatRoom.push(data);
-                    if (chatRoomIdArrLength === 0) {
-                        res.json({
-                            status: 2,
-                            message:'success',
-                            data:allMyChatRoom
-                        })
-                    }
-                }
+        console.log(chatRoomIdArrLength)
+        if(chatRoomIdArrLength === 0){
+            res.json({
+                status: 2,
+                message:'success',
+                data:[]
             })
-        })
+        }else{
+            const allMyChatRoom = []
+            chatRoomIdArr.forEach(chatRoomId => {
+                models.chatRoom.findById(chatRoomId, (err, data) => {
+                    if (err) throw err;
+                    if (data) {
+                        chatRoomIdArrLength--;
+                        allMyChatRoom.push(data);
+                        if (chatRoomIdArrLength === 0) {
+                            res.json({
+                                status: 2,
+                                message:'success',
+                                data:allMyChatRoom
+                            })
+                        }
+                    }
+                })
+            })
+        }
+       
     })
 
 

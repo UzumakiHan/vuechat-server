@@ -188,7 +188,7 @@ router.post('/myGroupChatMsg',(req,res)=>{
           res.json({
               status: 2,
               data:{
-                groupChatList:data
+                allGrounpChatList:data
               },
               message: '获取聊天记录成功',
           })
