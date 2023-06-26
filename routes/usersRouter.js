@@ -8,7 +8,6 @@ const svgCaptcha = require('svg-captcha');
 const md5 = require('md5-node');
 const models = require('../db')
 const multiparty = require('multiparty');
-const R = require('ramda')
 
 /**
  * 获取随机图形验证码
